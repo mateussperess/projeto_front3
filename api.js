@@ -14,6 +14,7 @@ async function fetchMovies() {
       options
     );
     const data = await response.json();
+    console.log('Filmes recebidos:', data);
     return data;
   } catch (error) {
     console.error("Erro na API:", error);

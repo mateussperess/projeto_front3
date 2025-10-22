@@ -48,7 +48,6 @@ function getFromCache() {
   return cacheData.data;
 }
 
-// carregar filmes (cache ou API)
 async function loadMovies() {
   let data = getFromCache();
 
@@ -63,8 +62,11 @@ async function loadMovies() {
 function criarCardMovie(movie) {
   const movieObj = new Movie(movie);
 
+  const col = document.createElement("div");
+  col.className = "col";
+
   const card = document.createElement("div");
-  card.className = "card";
+  card.className = "card h-100";
 
   const img = document.createElement("img");
   img.src = movieObj.getPosterUrl();
@@ -80,11 +82,11 @@ function criarCardMovie(movie) {
 
   const overview = document.createElement("p");
   overview.className = "card-text";
-  overview.textContent = movieObj.overview;
+  overview.textContent = movieObj.overview || 'Sem descrição disponível';
 
   const rating = document.createElement("p");
   rating.className = "card-text";
-  rating.innerHTML = `<small class="text-body-secondary">${movieObj.getFormattedRating()}</small>`;
+  rating.innerHTML = `<small class="text-body-secondary">⭐ ${movieObj.getFormattedRating()}</small>`;
 
   cardBody.appendChild(title);
   cardBody.appendChild(overview);
@@ -92,26 +94,36 @@ function criarCardMovie(movie) {
 
   card.appendChild(img);
   card.appendChild(cardBody);
+  col.appendChild(card);
 
-  return card;
+  return col;
 }
 
-// carrega os filmes
-async function renderMovies() {
-  const data = await loadMovies();
+function renderMovies(movies) {
+  const movieList = document.querySelector('#movie-list .row');
 
-  if (!data || !data.results) {
-    console.error('Não foi possível carregar os filmes');
+  if (!movieList) {
+    console.error('Elemento #movie-list .row não encontrado!');
     return;
   }
 
-  const cardGroup = document.querySelector('.card-group');
-  cardGroup.innerHTML = ''; // Limpa os cards de exemplo
+  movieList.innerHTML = '';
 
-  data.results.slice(0, 3).forEach(movie => {
-    const card = criarCardMovie(movie);
-    cardGroup.appendChild(card);
+  console.log('Renderizando', movies.length, 'filmes');
+
+  movies.forEach(movie => {
+    const movieCard = criarCardMovie(movie);
+    movieList.appendChild(movieCard);
   });
 }
 
-document.addEventListener('DOMContentLoaded', renderMovies);
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('DOM carregado, buscando filmes...');
+  const data = await loadMovies();
+
+  if (data && data.results) {
+    renderMovies(data.results);
+  } else {
+    console.error('Nenhum dado de filme encontrado');
+  }
+});
