@@ -1,186 +1,171 @@
-const CACHE_KEY = 'tmdb_movies_cache';
-const CACHE_EXPIRATION = 1000 * 60 * 60; // 1 hora
+// IMPORTANTE: Para este ambiente, o armazenamento persistente deve idealmente usar o Firebase Firestore
+// em vez de localStorage para aplicativos multiusuário e compatibilidade total.
+// Mantive o localStorage apenas para fins de demonstração de cache local.
 
 let currentPage = 1;
 let totalPages = 1;
-let allMovies = [];
+let currentFilter = "popular";
+let isSearchMode = false;
 
-class Movie {
-  constructor(data) {
-    this.id = data.id;
-    this.title = data.title;
-    this.overview = data.overview;
-    this.rating = data.vote_average;
-    this.posterPath = data.poster_path;
-    this.releaseDate = data.release_date;
-  }
-
-  getPosterUrl(size = "w500") {
-    return this.posterPath
-      ? `https://image.tmdb.org/t/p/${size}${this.posterPath}`
-      : "https://via.placeholder.com/500x750?text=Sem+Imagem";
-  }
-
-  getFormattedRating() {
-    return this.rating.toFixed(1);
-  }
+function getGenreName(genreIds) {
+  return window.getGenreNameByIds(genreIds);
 }
 
-function saveToCache(data) {
-  const cacheData = {
-    timestamp: Date.now(),
-    data: data
-  };
-  localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-  console.log('Dados salvos no localStorage');
+function createMovieCard(movie) {
+  const posterUrl = movie.poster_path
+    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+    : "https://via.placeholder.com/500x750?text=Sem+Imagem";
+
+  return `
+  <div class="col">
+    <div class="card h-100 shadow-sm border-0 rounded-3 movie-card">
+      <img src="${posterUrl}" class="card-img-top rounded-top-3 movie-poster" alt="${movie.title
+    }">
+        <div class="card-body">
+          <h5 class="card-title text-truncate" title="${movie.title}">${movie.title
+    }</h5>
+          <p class="card-text text-muted">
+            <small>${getGenreName(
+      movie.genre_ids
+    )} | ⭐ ${movie.vote_average.toFixed(1)}</small>
+          </p>
+          <p class="card-text">
+            <small class="text-muted">${movie.release_date
+      ? new Date(movie.release_date).getFullYear()
+      : "N/A"
+    }</small>
+          </p>
+        </div>
+    </div>
+  </div>
+  `;
 }
 
-function getFromCache() {
-  const cached = localStorage.getItem(CACHE_KEY);
-
-  if (!cached) return null;
-
-  const cacheData = JSON.parse(cached);
-  const isExpired = (Date.now() - cacheData.timestamp) > CACHE_EXPIRATION;
-
-  if (isExpired) {
-    localStorage.removeItem(CACHE_KEY);
-    return null;
-  }
-
-  console.log('Dados recuperados do cache');
-  return cacheData.data;
-}
-
-async function loadMovies(page = 1, append = false) {
-  let data;
-
-  // usa cache na primeira página
-  if (page === 1 && !append) {
-    data = getFromCache();
-  }
-
-  if (!data) {
-    data = await fetchMovies(page);
-    if (data && page === 1) saveToCache(data);
-  }
+async function loadMovies(filter, page = 1, append = false) {
+  const data = await window.fetchMovies(page, filter);
 
   if (data && data.results) {
-    totalPages = data.total_pages;
+    const grid = document.getElementById("movie-grid");
 
-    if (append) {
-      allMovies = [...allMovies, ...data.results];
-    } else {
-      allMovies = data.results;
+    if (!append) {
+      grid.innerHTML = "";
     }
 
-    renderMovies(allMovies, append);
-    updatePaginationInfo();
-  }
-
-  return data;
-}
-
-function criarCardMovie(movie) {
-  const movieObj = new Movie(movie);
-
-  const col = document.createElement("div");
-  col.className = "col";
-
-  const card = document.createElement("div");
-  card.className = "card h-100";
-
-  const img = document.createElement("img");
-  img.src = movieObj.getPosterUrl();
-  img.className = "card-img-top";
-  img.alt = movieObj.title;
-  img.loading = "lazy";
-
-  const cardBody = document.createElement("div");
-  cardBody.className = "card-body";
-
-  const title = document.createElement("h5");
-  title.className = "card-title";
-  title.textContent = movieObj.title;
-
-  const overview = document.createElement("p");
-  overview.className = "card-text";
-  overview.textContent = movieObj.overview || 'Sem descrição disponível';
-
-  const rating = document.createElement("p");
-  rating.className = "card-text";
-  rating.innerHTML = `<small class="text-body-secondary">⭐ ${movieObj.getFormattedRating()}</small>`;
-
-  cardBody.appendChild(title);
-  cardBody.appendChild(overview);
-  cardBody.appendChild(rating);
-
-  card.appendChild(img);
-  card.appendChild(cardBody);
-  col.appendChild(card);
-
-  return col;
-}
-
-function renderMovies(movies, append = false) {
-  const movieList = document.querySelector('#movie-list .row');
-
-  if (!movieList) {
-    console.error('Elemento #movie-list .row não encontrado!');
-    return;
-  }
-
-  if (!append) {
-    movieList.innerHTML = '';
-  }
-
-  console.log('Renderizando', movies.length, 'filmes');
-
-  const moviesToRender = append ? movies.slice(-(movies.length - (currentPage - 1) * 20)) : movies;
-
-  moviesToRender.forEach(movie => {
-    const movieCard = criarCardMovie(movie);
-    movieList.appendChild(movieCard);
-  });
-}
-
-function updatePaginationInfo() {
-  const currentPageEl = document.getElementById('current-page');
-  const totalPagesEl = document.getElementById('total-pages');
-  const loadMoreBtn = document.getElementById('load-more-btn');
-
-  if (currentPageEl) currentPageEl.textContent = currentPage;
-  if (totalPagesEl) totalPagesEl.textContent = totalPages;
-
-  if (loadMoreBtn) {
-    if (currentPage >= totalPages) {
-      loadMoreBtn.disabled = true;
-      loadMoreBtn.textContent = 'Todos os filmes carregados';
-    } else {
-      loadMoreBtn.disabled = false;
-      loadMoreBtn.textContent = 'Carregar Mais Filmes';
-    }
-  }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM carregado, buscando filmes...');
-  await loadMovies(currentPage);
-
-  // botão de carregar mais
-  const loadMoreBtn = document.getElementById('load-more-btn');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', async () => {
-      loadMoreBtn.disabled = true;
-      loadMoreBtn.textContent = 'Carregando...';
-
-      currentPage++;
-      await loadMovies(currentPage, true);
-
-      window.scrollTo({
-        top: document.body.scrollHeight - window.innerHeight - 200,
-        behavior: 'smooth'
-      });
+    data.results.forEach((movie) => {
+      grid.innerHTML += createMovieCard(movie);
     });
+
+    currentPage = data.page;
+    totalPages = data.total_pages;
+    currentFilter = filter;
+
+    document.getElementById("current-page").textContent = currentPage;
+    document.getElementById("total-pages").textContent = totalPages;
+
+    const loadMoreBtn = document.getElementById("load-more-btn");
+    loadMoreBtn.style.display =
+      currentPage >= totalPages ? "none" : "block";
   }
+}
+
+async function performSearch(query) {
+  const data = await window.searchMovies(query);
+
+  if (data && data.results) {
+    const grid = document.getElementById("movie-grid");
+    grid.innerHTML = "";
+
+    if (data.results.length === 0) {
+      grid.innerHTML =
+        '<div class="col-12"><p class="text-center text-muted">Nenhum filme encontrado.</p></div>';
+    } else {
+      data.results.forEach((movie) => {
+        grid.innerHTML += createMovieCard(movie);
+      });
+    }
+
+    document.getElementById(
+      "page-title"
+    ).textContent = `Resultados para: "${query}"`;
+    document.getElementById("load-more-btn").style.display = "none";
+    isSearchMode = true;
+  }
+}
+
+// Event Listeners
+document.addEventListener("DOMContentLoaded", () => {
+  loadMovies("popular");
+
+  // Navigation links
+  document.querySelectorAll("[data-filter]").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const filter = e.target.dataset.filter;
+
+      if (filter === "search") return;
+
+      document
+        .querySelectorAll(".nav-link")
+        .forEach((l) => l.classList.remove("active"));
+      e.target.classList.add("active");
+
+      const titles = {
+        popular: "Filmes Populares",
+        country: "Filmes Brasileiros",
+        genre: "Filmes de Ação",
+        rating: "Filmes para Toda Família",
+      };
+
+      document.getElementById("page-title").textContent =
+        titles[filter] || "Catálogo de Filmes";
+      isSearchMode = false;
+      loadMovies(filter);
+    });
+  });
+
+  // Load more button
+  document
+    .getElementById("load-more-btn")
+    .addEventListener("click", () => {
+      loadMovies(currentFilter, currentPage + 1, true);
+    });
+
+  // Search functionality
+  const searchBtn = document.getElementById("search-btn");
+  const searchModal = document.getElementById("search-modal");
+  const closeSearch = document.getElementById("close-search");
+  const searchSubmit = document.getElementById("search-submit");
+  const searchInput = document.getElementById("search-input");
+
+  searchBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    searchModal.classList.add("active");
+    searchInput.focus();
+  });
+
+  closeSearch.addEventListener("click", () => {
+    searchModal.classList.remove("active");
+    searchInput.value = "";
+  });
+
+  searchSubmit.addEventListener("click", () => {
+    const query = searchInput.value.trim();
+    if (query) {
+      performSearch(query);
+      searchModal.classList.remove("active");
+      searchInput.value = "";
+    }
+  });
+
+  searchInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      searchSubmit.click();
+    }
+  });
+
+  searchModal.addEventListener("click", (e) => {
+    if (e.target === searchModal) {
+      searchModal.classList.remove("active");
+    }
+  });
 });
