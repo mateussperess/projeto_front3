@@ -1,6 +1,10 @@
 const CACHE_KEY = 'tmdb_movies_cache';
 const CACHE_EXPIRATION = 1000 * 60 * 60; // 1 hora
 
+let currentPage = 1;
+let totalPages = 1;
+let allMovies = [];
+
 class Movie {
   constructor(data) {
     this.id = data.id;
@@ -48,12 +52,30 @@ function getFromCache() {
   return cacheData.data;
 }
 
-async function loadMovies() {
-  let data = getFromCache();
+async function loadMovies(page = 1, append = false) {
+  let data;
+
+  // usa cache na primeira página
+  if (page === 1 && !append) {
+    data = getFromCache();
+  }
 
   if (!data) {
-    data = await fetchMovies();
-    if (data) saveToCache(data);
+    data = await fetchMovies(page);
+    if (data && page === 1) saveToCache(data);
+  }
+
+  if (data && data.results) {
+    totalPages = data.total_pages;
+
+    if (append) {
+      allMovies = [...allMovies, ...data.results];
+    } else {
+      allMovies = data.results;
+    }
+
+    renderMovies(allMovies, append);
+    updatePaginationInfo();
   }
 
   return data;
@@ -72,6 +94,7 @@ function criarCardMovie(movie) {
   img.src = movieObj.getPosterUrl();
   img.className = "card-img-top";
   img.alt = movieObj.title;
+  img.loading = "lazy";
 
   const cardBody = document.createElement("div");
   cardBody.className = "card-body";
@@ -99,7 +122,7 @@ function criarCardMovie(movie) {
   return col;
 }
 
-function renderMovies(movies) {
+function renderMovies(movies, append = false) {
   const movieList = document.querySelector('#movie-list .row');
 
   if (!movieList) {
@@ -107,23 +130,57 @@ function renderMovies(movies) {
     return;
   }
 
-  movieList.innerHTML = '';
+  if (!append) {
+    movieList.innerHTML = '';
+  }
 
   console.log('Renderizando', movies.length, 'filmes');
 
-  movies.forEach(movie => {
+  const moviesToRender = append ? movies.slice(-(movies.length - (currentPage - 1) * 20)) : movies;
+
+  moviesToRender.forEach(movie => {
     const movieCard = criarCardMovie(movie);
     movieList.appendChild(movieCard);
   });
 }
 
+function updatePaginationInfo() {
+  const currentPageEl = document.getElementById('current-page');
+  const totalPagesEl = document.getElementById('total-pages');
+  const loadMoreBtn = document.getElementById('load-more-btn');
+
+  if (currentPageEl) currentPageEl.textContent = currentPage;
+  if (totalPagesEl) totalPagesEl.textContent = totalPages;
+
+  if (loadMoreBtn) {
+    if (currentPage >= totalPages) {
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = 'Todos os filmes carregados';
+    } else {
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.textContent = 'Carregar Mais Filmes';
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM carregado, buscando filmes...');
-  const data = await loadMovies();
+  await loadMovies(currentPage);
 
-  if (data && data.results) {
-    renderMovies(data.results);
-  } else {
-    console.error('Nenhum dado de filme encontrado');
+  // botão de carregar mais
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', async () => {
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = 'Carregando...';
+
+      currentPage++;
+      await loadMovies(currentPage, true);
+
+      window.scrollTo({
+        top: document.body.scrollHeight - window.innerHeight - 200,
+        behavior: 'smooth'
+      });
+    });
   }
 });

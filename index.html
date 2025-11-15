@@ -14,20 +14,33 @@
   </head>
   <body>
     <nav>
-      <a href="#"> Teste </a>
-      <a href="#"> Teste </a>
-      <a href="#"> Teste </a>
-      <a href="#"> Teste </a>
-      <a href="#"> Teste </a>
+      <a href="#" data-filter="popular"> Populares </a>
+      <a href="#" data-filter="country"> Por País </a>
+      <a href="#" data-filter="genre"> Por Gênero </a>
+      <a href="#" data-filter="rating"> Por Classificação </a>
+      <a href="#" data-filter="search"> Pesquisar </a>
     </nav>
     <main>
       <div id="movie-list" class="container">
-        <div class="row row-cols-1 row-cols-md-4 g-4">
-        </div>
+        <div class="row row-cols-1 row-cols-md-4 g-4"></div>
+      </div>
+
+      <!-- Botão para carregar mais -->
+      <div class="container text-center my-4">
+        <button id="load-more-btn" class="btn btn-primary btn-lg">
+          Carregar Mais Filmes
+        </button>
+        <p class="mt-2 text-muted">
+          <small
+            >Página <span id="current-page">1</span> de
+            <span id="total-pages">-</span></small
+          >
+        </p>
       </div>
     </main>
 
-    <script src="api.js"></script>
+    <!-- <script src="api.js"></script> -->
+    <script src="./assets/js/mockup.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

@@ -6,15 +6,15 @@ const options = {
   },
 };
 
-async function fetchMovies() {
+async function fetchMovies(page = 1) {
   try {
-    console.log('Fazendo requisição para a API...');
+    console.log(`Fazendo requisição para a API - Página ${page}...`);
     const response = await fetch(
-      "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=pt-BR&page=1&sort_by=popularity.desc",
+      `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=pt-BR&page=${page}&sort_by=popularity.desc`,
       options
     );
     const data = await response.json();
-    console.log('Filmes recebidos:', data);
+    console.log(`Filmes recebidos da página ${page}:`, data);
     return data;
   } catch (error) {
     console.error("Erro na API:", error);
