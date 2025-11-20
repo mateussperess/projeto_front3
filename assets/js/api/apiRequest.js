@@ -7,7 +7,7 @@ export async function request(url) {
     const req = await fetch(url, APICONFIG.OPTIONS);
     const data = await req.json()
 
-    console.log("[DEBUG] received data: " + data)
+    console.log("[DEBUG] received data: " + JSON.stringify(data))
     return data
   } catch (error) {
     console.log("[ERROR] error in request api: " + error)
