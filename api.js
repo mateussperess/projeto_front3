@@ -6,6 +6,7 @@ const options = {
   },
 };
 
+// Filtro por página(populares)
 async function fetchMovies(page = 1) {
   try {
     console.log(`Fazendo requisição para a API - Página ${page}...`);
@@ -21,3 +22,5 @@ async function fetchMovies(page = 1) {
     return null;
   }
 }
+
+fetchMovies()
