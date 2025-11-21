@@ -21,6 +21,11 @@ export const APICONFIG = {
     searchClassifications: () => {
       return `https://api.themoviedb.org/3/certification/movie/list`;
     },
+    moviesByName: (title, page = 1) => {
+      return `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
+        title
+      )}&language=pt-BR&page=${page}`;
+    },
   },
   OPTIONS: {
     method: "GET",

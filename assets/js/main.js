@@ -37,10 +37,22 @@ function goToPage(page) {
   pageConfig.currentPage = page;
   let url;
 
+  if (pageConfig.isSearchMode && pageConfig.searchTerm) {
+    url = FILTERS.search.getUrl(pageConfig.searchTerm, page);
+    loadMovies(url);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
   if (pageConfig.currentFilter === "country") {
     url = FILTERS.country.getUrl(pageConfig.selectedCountry, page);
   } else if (pageConfig.currentFilter === "genre") {
     url = FILTERS.genre.getUrl(pageConfig.selectedGenre, page);
+  } else if (pageConfig.currentFilter === "classification") {
+    url = FILTERS.classification.getUrl(
+      pageConfig.selectedClassification,
+      page
+    );
   } else {
     url = FILTERS[pageConfig.currentFilter].getUrl(page);
   }
@@ -50,6 +62,9 @@ function goToPage(page) {
 }
 
 async function changeFilter(filter) {
+  pageConfig.isSearchMode = false;
+  pageConfig.searchTerm = null;
+
   pageConfig.currentFilter = filter;
   pageConfig.currentPage = 1;
 
@@ -114,7 +129,7 @@ async function changeFilter(filter) {
       select.appendChild(option);
     });
 
-    pageConfig.selectedGenre = select.value;
+    pageConfig.selectedClassification = select.value;
 
     loadMovies(FILTERS.classification.getUrl(select.value, 1));
     return;
@@ -123,7 +138,66 @@ async function changeFilter(filter) {
   loadMovies(FILTERS[filter].getUrl(1));
 }
 
+async function searchMoviesByTitle() {
+  const searchInput = document.querySelector("#search-input");
+  const searchTerm = searchInput?.value.trim();
+
+  if (!searchTerm) {
+    alert("Por favor, digite o nome do filme");
+    return;
+  }
+
+  try {
+    pageConfig.isSearchMode = true;
+    pageConfig.searchTerm = searchTerm;
+    pageConfig.currentPage = 1;
+    pageConfig.currentFilter = null; 
+
+    pageConfig.selectedGenre = null;
+    pageConfig.selectedCountry = null;
+    pageConfig.selectedClassification = null;
+
+    const selectWrapper = document.querySelector("#dynamic-select-wrapper");
+    if (selectWrapper) {
+      selectWrapper.classList.add("d-none");
+    }
+
+    document.querySelectorAll(".nav-link").forEach((link) => {
+      link.classList.remove("active");
+    });
+
+    document.getElementById(
+      "page-title"
+    ).textContent = `Resultados para "${searchTerm}"`;
+
+    const url = FILTERS.search.getUrl(searchTerm, 1);
+    await loadMovies(url);
+  } catch (error) {
+    console.error("Erro na busca:", error);
+    alert("Erro ao buscar filmes. Tente novamente.");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  const searchButton = document.querySelector("#search-btn");
+  const searchInput = document.querySelector("#search-input");
+
+  if (searchButton) {
+    searchButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      searchMoviesByTitle();
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        searchMoviesByTitle();
+      }
+    });
+  }
+
   changeFilter("popular");
 
   document.getElementById("prev-btn").addEventListener("click", () => {
@@ -163,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (pageConfig.currentFilter === "classification") {
-      pageConfig.selecteedClassification = value;
+      pageConfig.selectedClassification = value;
       loadMovies(FILTERS.classification.getUrl(value, 1));
     }
   });

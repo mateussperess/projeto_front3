@@ -8,7 +8,8 @@ export const pageConfig = {
   isSearchMode: false,
   selectedGenre: null,
   selectedCountry: null,
-  selecteedClassification: null
+  selecteedClassification: null,
+  searchTerm: null,
 };
 
 export const FILTERS = {
@@ -22,10 +23,16 @@ export const FILTERS = {
   },
   country: {
     title: "Filtrar por País",
-    getUrl: (country, page) => APICONFIG.endpoints.moviesByCountry(country, page),
+    getUrl: (country, page) =>
+      APICONFIG.endpoints.moviesByCountry(country, page),
   },
   classification: {
     title: "Filtrar por Classificação",
-    getUrl: (classification, page) => APICONFIG.endpoints.moviesByClassification(classification, page),
+    getUrl: (classification, page) =>
+      APICONFIG.endpoints.moviesByClassification(classification, page),
+  },
+  search: {
+    title: "Resultados da Busca",
+    getUrl: (title, page) => APICONFIG.endpoints.moviesByName(title, page),
   },
 };
