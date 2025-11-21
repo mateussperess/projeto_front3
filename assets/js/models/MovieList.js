@@ -28,15 +28,6 @@ MovieList.prototype.renderCards = function (container) {
 };
 
 MovieList.prototype.setPagination = function (currentPage, totalPages) {
-    document.getElementById("current-page").textContent = currentPage;
-    document.getElementById("total-pages").textContent = totalPages;
-
-    if (this.hasNextPage()) {
-      const loadMoreBtn = document.getElementById("load-more-btn");
-      loadMoreBtn.style.display = totalPages;
-    }
-
-    // Will be use in the future with new filters 
     this.page = currentPage;
     this.totalPages = totalPages;
 };
@@ -44,3 +35,21 @@ MovieList.prototype.setPagination = function (currentPage, totalPages) {
 MovieList.prototype.hasNextPage = function () {
     return this.page < this.totalPages;
 };
+
+// MovieList.prototype.setPagination = function (currentPage, totalPages) {
+//     document.getElementById("current-page").textContent = currentPage;
+//     document.getElementById("total-pages").textContent = totalPages;
+
+//     if (this.hasNextPage()) {
+//       const loadMoreBtn = document.getElementById("load-more-btn");
+//       loadMoreBtn.style.display = totalPages;
+//     }
+
+//     // Will be use in the future with new filters 
+//     this.page = currentPage;
+//     this.totalPages = totalPages;
+// };
+
+// MovieList.prototype.hasNextPage = function () {
+//     return this.page < this.totalPages;
+// };

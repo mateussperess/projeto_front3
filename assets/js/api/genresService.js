@@ -10,7 +10,6 @@ export async function getGenres() {
         return JSON.parse(genres);
     }
 
-    console.log("CHAMOU A API AQUI")
     const data = await request(APICONFIG.endpoints.searchGenres())
 
     localStorage.setItem(GENRES_KEY, JSON.stringify(data.genres));

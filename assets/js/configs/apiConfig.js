@@ -3,16 +3,16 @@ export const APICONFIG = {
     popularMovies: (page = 1) => {
       return `https://api.themoviedb.org/3/discover/movie?include_video=false&language=pt-BR&page=${page}&sort_by=popularity.desc`;
     },
-    moviesByCountry: (page = 1) => {
-      return `https://api.themoviedb.org/3/discover/movie?include_video=false&language=pt-BR&page=${page}&with_original_language=pt`;
+    moviesByCountry: (country, page = 1) => {
+      return `https://api.themoviedb.org/3/discover/movie?include_video=false&language=pt-BR&page=${page}&with_original_language=${country}`;
     },
-    moviesByGenre: (page = 1, genre) => {
+    moviesByGenre: (genre, page = 1) => {
       return `https://api.themoviedb.org/3/discover/movie?include_video=false&language=pt-BR&page=${page}&with_genres=${genre}`;
     },
-    moviesByClassification: (page = 1, classification = "L") => {
+    moviesByClassification: (classification = "L", page = 1) => {
       return `https://api.themoviedb.org/3/discover/movie?include_video=false&language=pt-BR&page=${page}&certification_country=BR&certification=${classification}&language=pt-BR`;
     },
-    moviesByName: (page = 1, name) => {
+    moviesByName: (name, page = 1) => {
       return `https://api.themoviedb.org/3/search/movie?query=${name}&language=pt-BR&page=${page}`;
     },
     searchGenres: () => {
